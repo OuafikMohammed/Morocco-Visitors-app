@@ -1,30 +1,91 @@
-import React, { useState, useContext } from "react"
+import { useState, useContext } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "../components/ui/card"
 import { UserContext } from "../contexts/UserContext"
+import { useToast } from "@/hooks/use-toast"
+import { useGoogleLogin } from "@react-oauth/google"
 
 export default function Login() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const navigate = useNavigate()
   const { setUser } = useContext(UserContext)
+  const { toast } = useToast()
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    // Here you would typically handle the login logic
-    console.log("Login attempt with:", email, password)
+    try {
+      // Simulating a login API call
+      const response = await new Promise((resolve) => {
+        setTimeout(() => {
+          resolve({ ok: true, json: () => ({ id: "1", name: "Test User", email, plan: "basic" }) })
+        }, 1000)
+      })
 
-    // Simulate successful login
-    setUser({ email, plan: "basic" }) // You'd typically get the plan from your backend
-    navigate("/")
+      if (response.ok) {
+        const userData = await response.json()
+        setUser(userData)
+        toast({
+          title: "Success",
+          description: "Logged in successfully!",
+        })
+        setTimeout(() => navigate("/"), 2000)
+      } else {
+        toast({
+          title: "Error",
+          description: "Login failed. Please try again.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An error occurred. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
-  const handleGoogleLogin = () => {
-    // Implement Google login logic here
-    console.log("Google login attempted")
-  }
+  const googleLogin = useGoogleLogin({
+    onSuccess: async () => {
+      try {
+        // Simulating a Google login API call
+        const userInfo = await new Promise((resolve) => {
+          setTimeout(() => {
+            resolve({
+              id: "2",
+              name: "Google User",
+              email: "google@example.com",
+              picture: "https://example.com/avatar.jpg",
+              plan: "basic",
+            })
+          }, 1000)
+        })
+        setUser(userInfo)
+        toast({
+          title: "Success",
+          description: "Logged in successfully with Google!",
+        })
+        setTimeout(() => navigate("/"), 2000)
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Google login failed. Please try again.",
+          variant: "destructive",
+        })
+        console.log(error)
+      }
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Google login failed. Please try again.",
+        variant: "destructive",
+      })
+    },
+  })
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -58,7 +119,7 @@ export default function Login() {
           </form>
           <div className="mt-4">
             <Button
-              onClick={handleGoogleLogin}
+              onClick={() => googleLogin()}
               variant="outline"
               className="w-full flex items-center justify-center space-x-2"
             >
@@ -87,7 +148,7 @@ export default function Login() {
         </CardContent>
         <CardFooter>
           <p className="text-center w-full">
-            Don't have an account?{" "}
+            Don&rsquo;t have an account?{" "}
             <Link to="/signup" className="text-blue-600">
               Sign Up
             </Link>
